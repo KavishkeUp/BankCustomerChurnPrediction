@@ -2,15 +2,30 @@ import streamlit as st
 import numpy as np
 import joblib
 
+# Background Image 
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)),
+                    url("https://www.lytics.com/wp-content/uploads/2022/07/article-Customer-Churn-Prediction_-How-to-do-It-and-Reduce-Customer-Churn.jpg");
+        background-attachment: fixed;
+        background-size: cover;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Load model and scaler
 model = joblib.load("churn_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-# --- App Config ---
+# App Config
 st.set_page_config(page_title="Bank Churn Predictor", layout="centered")
-st.title("💼 Bank Customer Churn Prediction")
+st.title("👥📉 Bank Customer Churn Prediction")
 
-# --- Sidebar Info ---
+# Sidebar Info
 st.sidebar.header("ℹ️ About")
 st.sidebar.markdown("""
 This app predicts the risk of customer churn based on bank records using a trained ML model.  
@@ -19,7 +34,7 @@ This app predicts the risk of customer churn based on bank records using a train
 - Get an instant risk score  
 """)
 
-# --- Input Form ---
+# Input Form
 st.markdown("### 🧾 Enter Customer Details Below")
 
 with st.form("churn_form"):
@@ -42,39 +57,37 @@ with st.form("churn_form"):
 
     submitted = st.form_submit_button("🚀 Predict Churn Risk")
 
-# --- Prediction Logic ---
 if submitted:
-    # Convert categorical values
+    # Convert categorical inputs
     has_cr_card = 1 if has_cr_card == "Yes" else 0
     is_active_member = 1 if is_active_member == "Yes" else 0
     gender_1 = 1 if gender == "Male" else 0
     geography_1 = 1 if geography == "Germany" else 0
     geography_2 = 1 if geography == "Spain" else 0
 
-    # Build input vector in correct order
+    # Build input vector WITHOUT customer_id (exclude it from model)
     input_data = np.array([[
-        customer_id,             # id
-        credit_score,            # CreditScore
-        age,                     # Age
-        tenure,                  # Tenure
-        balance,                 # Balance
-        num_of_products,         # NumOfProducts
-        has_cr_card,             # HasCrCard
-        is_active_member,        # IsActiveMember
-        estimated_salary,        # EstimatedSalary
-        geography_1,             # Geography_1 (Germany)
-        geography_2,             # Geography_2 (Spain)
-        gender_1                 # Gender_1 (Male)
+        credit_score,
+        age,
+        tenure,
+        balance,
+        num_of_products,
+        has_cr_card,
+        is_active_member,
+        estimated_salary,
+        geography_1,
+        geography_2,
+        gender_1
     ]])
 
-    # Predict
+    # Scale and predict
     input_scaled = scaler.transform(input_data)
     prediction = model.predict(input_scaled)[0]
-    proba = model.predict_proba(input_scaled)[0][1]  # Probability of churn
+    proba = model.predict_proba(input_scaled)[0][1]
 
-    # --- Output ---
+    # Show result along with Customer ID
     st.markdown("---")
-    st.markdown("### 🔍 Prediction Result")
+    st.markdown(f"### 🔍 Prediction Result for Customer ID: {customer_id}")
 
     if prediction == 1:
         st.error(f"⚠️ **High risk of churn!**\n\n💣 **Risk Score: {proba*100:.2f}%**")
